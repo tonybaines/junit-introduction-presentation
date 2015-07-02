@@ -1,0 +1,57 @@
+= Test Automation and TDD
+2015-05-31
+:revnumber: {project-version}
+ifndef::imagesdir[:imagesdir: images]
+ifndef::sourcedir[:sourcedir: ../java]
+
+== Some Definintions
+[%step]
+* **Test Automation**
+** Writing and running repeatable verifications
+** of the behaviour of an individual piece of code
+** ..., or an entire system
+** using tools such as JUnit or Selenium
+* **TDD**
+** A method of incrementally designing and implementing features
+in a software system
+** by alternately
+*** specifying expected behaviour in automated tests
+*** writing production code to meet the specification
+** and periodically improving the design through refactoring
+*** changing the implementation without changing the behaviour
+
+
+== What makes a good automated test
+The value that a team gets from automated testing **must** be greater
+than the effort that they expend creating and maintaining those tests.
+
+[%step]
+* Benefits include
+** Regression testing
+** Fast feedback on changes
+** 'Documentation' on the behaviour of the system
+* A valuable test
+** Is __fast__
+** Fails for one reason (specific)
+** Expresses the scenario and intent of the test
+
+== Anatomy of an Automated Test
+
+[%step]
+* **Arrange**
+** Set-up the system / module under test
+** e.g. set configuration parameters, populate DB tables
+* **Act**
+** Invoke some action(s) on the system / module
+** e.g. login and submit a form with valid values
+* **Assert**
+** Verify the expected state
+** e.g. at the correct page, values in the DB as expected
+
+== Unit Testing
+
+== Integration Tests
+
+== Hamcrest
+
+* TBA
