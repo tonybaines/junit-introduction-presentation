@@ -5,14 +5,17 @@ ifndef::imagesdir[:imagesdir: images]
 ifndef::sourcedir[:sourcedir: ../java]
 
 == Some Definitions
+
+=== Test Automation
 [%step]
-* **Test Automation**
-** Writing and running repeatable verifications
+* Writing and running repeatable verifications
 ** of the behaviour of an individual piece of code
 ** ..., or an entire system
 ** using tools such as JUnit or Selenium
-* **TDD**
-** A method of incrementally designing and implementing features
+
+=== TDD
+[%step]
+* A method of incrementally designing and implementing features
 in a software system
 ** by alternately
 *** specifying expected behaviour in automated tests
@@ -37,6 +40,7 @@ than the effort that they expend creating and maintaining those tests.
 ** Expresses the scenario and intent of the test
 
 == Automated Unit Testing
+
 Fine-grained control over the unit under test, useful for covering all significant code paths
 
 [%step]
@@ -46,7 +50,8 @@ Fine-grained control over the unit under test, useful for covering all significa
 ** Any other test within the component boundary
 
 == Automated Integration Testing
-Used for checking assumptions about how other components' interfaces and how they behave
+
+Used for checking assumptions about  other components' interfaces and how they behave
 
 [%step]
 * *Real* External Component
@@ -55,6 +60,8 @@ Used for checking assumptions about how other components' interfaces and how the
 
 == Automated Functional Testing
 
+e.g. Selenium, JMeter
+
 [%step]
 * End to end scenarios
 * Focus on the happy-path
@@ -62,43 +69,86 @@ Used for checking assumptions about how other components' interfaces and how the
 
 == Anatomy of an Automated Test
 
+=== Arrange
 [%step]
-* **Arrange**
-** Set-up the system / module under test
+* Set-up the system / module under test
 ** e.g. set configuration parameters, populate DB tables
-* **Act**
-** Invoke some action(s) on the system / module
+
+=== Act
+[%step]
+* Invoke some action(s) on the system / module
 ** e.g. login and submit a form with valid values
-* **Assert**
-** Verify the expected state
+
+=== Assert
+[%step]
+* Verify the expected state
 ** e.g. at the correct page, values in the DB as expected
 
-== State-based Testing
+
+
+== Arranging
+
+Bring the state of the system (or part of it) into a known state
+
+* May involve
+** initialising variables
+** simple building of objects
+** setting up stub responses of collaborators
+
+[WARNING]
+*If arranging a test swamps out its intent it might mean excessive coupling*
+
+== Acting
+
+Exercise the system/component/class
+
+* One operation
+* Express the intent with variable names if required
+
+[source, language="java"]
+----
+public void whenTheTransactionIsExecuted...() {
+  //...
+  successfulTransaction =
+    Transaction.from(source).to(destination).of(10.00).execute();
+  //...
+}
+----
+
+== Asserting
+* Role
+* Hamcrest
+
+=== State-based Testing
 
 Assertions based on _values_
 
-[%step]
 1. Do something which changes the state of the system
 2. Verify the new state
 
 [source, language="java"]
 ----
-assertThat(bankAccount.balance(), is(Money.NaN));
+public void shouldHaveNoBalanceWhenANewAccountIsRegistered() {
+  // ...
+  assertThat(bankAccount.balance(), is(Money.NaN));
+}
 ----
 
-== Behaviour-based Testing
+=== Behaviour-based Testing
 
 Assertions based on _interactions_
-[%step]
+
 1. Send a signal
 2. Verify the interactions
 
-
-
-== Assertions
-* Role
-* Hamcrest
+[source, language="java"]
+----
+public void
+    whenTheSourceAccountHasInsufficientFundsTheDestinationIsNotCredited() {
+  // ...
+  verify(destinationAccount, never()).credit(anyFloat());
+}
+----
 
 == Maintaining Tests
 
-* TBA
