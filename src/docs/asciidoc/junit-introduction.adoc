@@ -98,6 +98,42 @@ Bring the state of the system (or part of it) into a known state
 [WARNING]
 *If arranging a test swamps out its intent it might mean excessive coupling*
 
+=== Object Mothers
+
+A helper or parent class holds a list of pre-defined instances
+
+
+[source, language="java"]
+----
+Certificate CERTIFICATE_1 = new Certificate() {{
+    setId(1L);
+    setName("testCertificate1");
+    setComment("COMMENT-1001");
+    setAssignedClusters(new ArrayList<String>());
+}};
+----
+
+* Duplicated data objects might be constants
+* Reusing these constants in different tests and contexts
+** couples the tests together (making them more brittle)
+** makes naming them harder
+** confuses intent if reused in graphs of related objects
+
+=== Builders
+
+The Fluent Builder pattern can be used to make assembling objects easier.
+
+[source, language="java"]
+----
+Certificate CERTIFICATE_1 = make(CERTIFICATE_MAKER
+        .but(with(id, 1l),
+             with(name, "testCertificate1")));
+----
+
+* E.g. the 'Make It Easy' library
+** Makes it easier to create a new instance for each test
+** Instances can be named for their role in the specific test
+
 == Acting
 
 Exercise the system/component/class
@@ -110,7 +146,8 @@ Exercise the system/component/class
 public void whenTheTransactionIsExecuted...() {
   //...
   successfulTransaction =
-    Transaction.from(source).to(destination).of(10.00).execute();
+    Transaction.from(source).to(destination).of(10.00);
+  successfulTransaction.execute();
   //...
 }
 ----
@@ -144,11 +181,38 @@ Assertions based on _interactions_
 [source, language="java"]
 ----
 public void
-    whenTheSourceAccountHasInsufficientFundsTheDestinationIsNotCredited() {
+  whenTheSourceAccountHasInsufficientFundsTheDestinationIsNotCredited() {
   // ...
   verify(destinationAccount, never()).credit(anyFloat());
 }
 ----
 
+== Working around problems
+
+=== The class I want to unit test creates expensive resources
+* Move initialisation code to a Factory Method and override in the test
+* Use Power Mock to intercept creation and replace fields
+
+=== There's behaviour in a parent class that makes it hard to unit test
+* Power Mock
+
+=== There's a Long-running or Asynchronous operation
+* Want to wait just long enough for the operation to complete
+* Don't want to wait too long (slow tests) or too little (false failure)
+
+* Tempus Fugit
+* WaitFor
+
+=== The logic I want to test is in a private method
+* Encapsulate the logic e.g. helper class
+* Also works for moving logic from an abstract parent class to make it testable
+
+
 == Maintaining Tests
 
+Like any other code, tests need maintenance
+
+* If a test fails for an unrelated reason to a change
+* If a test runs slow it slows down feedback
+* If a test is unclear in its intent
+* If there is excessive duplication
