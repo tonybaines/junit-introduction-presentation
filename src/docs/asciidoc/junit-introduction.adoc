@@ -7,21 +7,10 @@ ifndef::sourcedir[:sourcedir: ../java]
 == Some Definitions
 
 === Test Automation
-[%step]
-* Writing and running repeatable verifications
-** of the behaviour of an individual piece of code
-** ..., or an entire system
-** using tools such as JUnit or Selenium
 
-=== TDD
-[%step]
-* A method of incrementally designing and implementing features
-in a software system
-** by alternately
-*** specifying expected behaviour in automated tests
-*** writing production code to meet the specification
-** and periodically improving the design through refactoring
-*** changing the implementation without changing the behaviour
+Writing and running repeatable verifications
+of the behaviour of an individual piece of code,
+or an entire system.
 
 
 == The value of test automation
@@ -30,57 +19,57 @@ The value that a team gets from automated testing **must** be greater
 than the effort that they expend creating and maintaining those tests.
 
 [%step]
-* Benefits include
-** Regression testing
-** Fast feedback on changes
-** 'Documentation' on the behaviour of the system
 * A valuable test
-** Is __fast__
-** Fails for one reason (specific)
-** Expresses the scenario and intent of the test
+** Is _fast_ -> Fast feedback on changes
+** Fails for _one specific reason_ -> Regression testing
+** _Expresses the intent_ of the test -> 'Documentation' on the behaviour of the system
 
 == Automated Unit Testing
 
-Fine-grained control over the unit under test, useful for covering all significant code paths
+Fine-grained control over the unit under test, useful for covering all significant code paths.
 
-[%step]
+Exercise _happy-path_ and _sad-path_ scenarios.
+
+[NOTE.speaker]
+--
 * Solitary
 ** One class or method under test
 * Sociable
 ** Any other test within the component boundary
+--
 
 == Automated Integration Testing
 
-Used for checking assumptions about  other components' interfaces and how they behave
+Used for checking assumptions about other components' interfaces and how they behave.
 
 [%step]
-* *Real* External Component
+* Build on the detailed coverage of unit tests
+* Bring in a *Real* External Component
 ** e.g. Database - schema and SQL
 ** e.g. RESTful service - URIs and payloads
 
 == Automated Functional Testing
 
-e.g. Selenium, JMeter
+Exercise the whole system, or a major subset, through end-to-end scenarios.
 
 [%step]
-* End to end scenarios
+* Build on the more detailed integration and unit tests
 * Focus on the happy-path
-** Rely on more detailed tests
 
 == Anatomy of an Automated Test
 
 === Arrange
-[%step]
+
 * Set-up the system / module under test
 ** e.g. set configuration parameters, populate DB tables
 
 === Act
-[%step]
+
 * Invoke some action(s) on the system / module
 ** e.g. login and submit a form with valid values
 
 === Assert
-[%step]
+
 * Verify the expected state
 ** e.g. at the correct page, values in the DB as expected
 
@@ -88,20 +77,47 @@ e.g. Selenium, JMeter
 
 == Arranging
 
-Bring the state of the system (or part of it) into a known state
+Bring the state of the system (or part of it) into a known state to
+give _repeatability_.
 
+[%step]
 * May involve
 ** initialising variables
 ** simple building of objects
 ** setting up stub responses of collaborators
 
-[WARNING]
-*If arranging a test swamps out its intent it might mean excessive coupling*
+[NOTE.speaker]
+--
+WARNING: *If arranging a test swamps out its intent it might mean excessive coupling*
+--
+
+=== Handling Duplication
+
+Test setup may involve duplicating steps, _Test Fixtures_ can help to reduce the
+duplication and express intent.
+
+For example
+
+[source, language="java"]
+----
+DataProvider dataProvider = new StubDataProvider();
+Collaborator collaborator1 = new StubCollaborator();
+Collaborator collaborator2 = new StubCollaborator();
+MyService serviceUnderTest =
+    new MyService(dataProvider, collaborator1, collaborator2);
+----
+
+Becomes
+
+[source, language="java"]
+----
+MyService serviceUnderTest = Fixture.newServiceWithStubs();
+----
+
 
 === Object Mothers
 
-A helper or parent class holds a list of pre-defined instances
-
+A common pattern to reduce duplication; a helper or parent class holds a list of pre-defined instances
 
 [source, language="java"]
 ----
@@ -113,7 +129,6 @@ Certificate CERTIFICATE_1 = new Certificate() {{
 }};
 ----
 
-* Duplicated data objects might be constants
 * Reusing these constants in different tests and contexts
 ** couples the tests together (making them more brittle)
 ** makes naming them harder
@@ -153,8 +168,9 @@ public void whenTheTransactionIsExecuted...() {
 ----
 
 == Asserting
-* Role
-* Hamcrest
+
+Verify that the system behaved as expected, either through querying _state_
+or verifying _interactions_
 
 === State-based Testing
 
@@ -167,9 +183,28 @@ Assertions based on _values_
 ----
 public void shouldHaveNoBalanceWhenANewAccountIsRegistered() {
   // ...
-  assertThat(bankAccount.balance(), is(Money.NaN));
+  assertThat(bankAccount.balance(), is(new Money(0.0, GBP)));
 }
 ----
+
+_This uses the *Hamcrest* syntax for assertions that read more like an English sentence_
+
+=== Some Useful Hamcrest Assertions
+
+[source, language="java"]
+----
+assertThat(myValue, is(42));
+assertThat(myValue, is(closeTo(42)));
+assertThat(myString, is(not("foo"));
+assertThat(myString, contains("foo"));
+assertThat(myString, matches("^foo[a-z]+$"));
+assertThat(myList, hasItem("bar"));
+assertThat(myList, anyOf(
+                      hasItem("bar"),
+                      hasItem("baz")
+                   );
+----
+
 
 === Behaviour-based Testing
 
@@ -186,33 +221,101 @@ public void
   verify(destinationAccount, never()).credit(anyFloat());
 }
 ----
+_A mock-object framework such as *Mockito* can be used_
 
 == Working around problems
 
 === The class I want to unit test creates expensive resources
+
+* Use a Dependency Injection mechanism (Guice, Spring or Factory pattern)
 * Move initialisation code to a Factory Method and override in the test
-* Use Power Mock to intercept creation and replace fields
+
+=== Factory Method
+[source, language="java"]
+----
+private Collaborator collaborator1 = new ExpensiveCollaborator();
+----
+
+Becomes
+[source, language="java"]
+----
+private Collaborator collaborator1 = newCollaborator1();
+
+protected Collaborator newCollaborator1() {
+  return new ExpensiveCollaborator()
+}
+----
+
+In the test
+[source, language="java"]
+----
+...
+  @Override
+  protected Collaborator newCollaborator1() {
+    return new StubCollaborator()
+  }
+...
+----
 
 === There's behaviour in a parent class that makes it hard to unit test
-* Power Mock
+
+Tools such as *Power Mock* can be used to intercept constructors, static
+initialisation & methods and replace fields, but it's usually better to fix the design.
 
 === There's a Long-running or Asynchronous operation
+
 * Want to wait just long enough for the operation to complete
 * Don't want to wait too long (slow tests) or too little (false failure)
 
 * Tempus Fugit
-* WaitFor
+[source, language="java"]
+----
+WaitFor.waitOrTimeout(new Condition() {
+    public boolean isSatisfied() {
+        return expectedConditionIsTrue;
+    }
+}, timeout(Duration.seconds(2)));
+----
 
 === The logic I want to test is in a private method
-* Encapsulate the logic e.g. helper class
-* Also works for moving logic from an abstract parent class to make it testable
+[source, language="java"]
+----
+private void complicatedInternalProcessingWithSideEffects() {
+  // use and update private fields
+}
+----
+
+Encapsulate the logic e.g. helper class
+[source, language="java"]
+----
+public class Helper {
+  public Thing complicatedProcessingLogic(Input a, Input b, Input c) {
+    // use parameters and return result
+  }
+}
+----
+
+
+_Also works for moving logic from an abstract parent class to make it testable_
 
 
 == Maintaining Tests
 
-Like any other code, tests need maintenance
+Like any other code, tests need maintenance.
 
-* If a test fails for an unrelated reason to a change
-* If a test runs slow it slows down feedback
+Reasons for a test to change;
+
+* If a test fails for a reason unrelated to a code change
+* If a test runs slowly -> it slows down feedback
 * If a test is unclear in its intent
 * If there is excessive duplication
+* If a test no longer adds value -> delete it
+
+
+== Summary
+
+[%step]
+* Automated testing offers fast feedback, regression testing and documentation
+* Layers of unit, integration and functional tests build confidence in the system
+* Paying attention to the readability of a test makes it more valuable
+* Any code can be tested, but some design choices make it easier
